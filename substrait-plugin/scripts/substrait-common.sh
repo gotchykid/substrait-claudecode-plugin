@@ -28,6 +28,16 @@ print(v)
 PY
 }
 
+# _json_field KEY — read a JSON object from stdin, print obj[KEY]. Exit 1 if absent/null.
+# Used to pull fields out of API response bodies (the device-link start/poll payloads).
+# Uses `python3 -c` (not a heredoc) so stdin stays free for the piped JSON data.
+_json_field() {
+  python3 -c 'import json,sys
+try: v = json.load(sys.stdin).get(sys.argv[1])
+except Exception: sys.exit(1)
+sys.exit(1) if v is None else print(v)' "$1" 2>/dev/null
+}
+
 substrait_portal_url() {
   if [ -n "${SUBSTRAIT_PORTAL_URL:-}" ]; then printf '%s' "${SUBSTRAIT_PORTAL_URL%/}"; return 0; fi
   local v; if v="$(_json_get "$SUBSTRAIT_CONFIG_FILE" portal_url)"; then printf '%s' "${v%/}"; return 0; fi
@@ -63,4 +73,27 @@ substrait_call() {
   SUBSTRAIT_BODY="$(cat "$tmp")"
   rm -f "$tmp"
   return $rc
+}
+
+# substrait_anon_call METHOD URL [extra curl args...]
+# An UNAUTHENTICATED request to an absolute URL — used by the browser device-link flow
+# (start/poll carry no token; the token is what the flow is fetching). Sets the same
+# SUBSTRAIT_BODY / SUBSTRAIT_STATUS globals as substrait_call (so don't call it inside a
+# command substitution). Returns curl's exit code.
+substrait_anon_call() {
+  local method="$1" url="$2"; shift 2
+  local tmp; tmp="$(mktemp)" || return 1
+  SUBSTRAIT_STATUS="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$method" "$url" "$@" 2>/dev/null)"
+  local rc=$?
+  SUBSTRAIT_BODY="$(cat "$tmp")"
+  rm -f "$tmp"
+  return $rc
+}
+
+# substrait_open_url URL — best-effort open in the user's browser; silent if no opener.
+substrait_open_url() {
+  if command -v open >/dev/null 2>&1; then open "$1" >/dev/null 2>&1   # macOS
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$1" >/dev/null 2>&1  # Linux
+  elif command -v explorer.exe >/dev/null 2>&1; then explorer.exe "$1" >/dev/null 2>&1  # WSL
+  else return 1; fi
 }

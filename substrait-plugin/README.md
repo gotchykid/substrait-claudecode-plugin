@@ -7,8 +7,9 @@ terminal. The plugin bundles:
   on port 8000, `cicd/` Dockerfiles, optional React+Vite+Tailwind `frontend/`, Flyway
   migrations); and
 - two slash commands:
-  - **`/substrait:link`** — save this project's portal URL + app-scoped deploy token (the
-    token determines which app this project deploys to).
+  - **`/substrait:link`** — link this project to one of your apps. Opens the portal in your
+    browser so you pick the app while logged in; the app-scoped deploy token is fetched
+    automatically (no copy/paste). Falls back to pasting a token for headless/CI.
   - **`/substrait:deploy`** — package the project (source only) and deploy it to the linked
     app (`--watch` to follow the build).
 
@@ -21,11 +22,14 @@ terminal. The plugin bundles:
 
 ## Set up & deploy
 
-1. In the Substrait portal, open your app → its **Deploy** tab → **Create deploy token**,
-   and copy the `sbd_…` value (shown once). The app must already exist — a deploy token is
-   scoped to a single app.
-2. In your project, run `/substrait:link` and paste the token + portal URL when prompted.
-3. Run `/substrait:deploy` to ship (add `--watch` to follow the build to the live URL).
+1. In your project, run `/substrait:link`. It opens the portal in your browser (you're
+   already logged in), where you **pick the app** to link — the deploy token is minted for
+   that app and returned to the CLI automatically. The app must already exist.
+2. Run `/substrait:deploy` to ship (add `--watch` to follow the build to the live URL).
+
+**Headless / CI?** If there's no browser, mint a token by hand: portal → your app → its
+**Deploy** tab → **Create deploy token**, copy the `sbd_…` value (shown once), then run
+`/substrait:link` and paste it.
 
 Config is **per project** in `./.substrait/config.json` (chmod 600, gitignored) — portal
 URL + the app-scoped token. You can override with `SUBSTRAIT_PORTAL_URL` / `SUBSTRAIT_TOKEN`
