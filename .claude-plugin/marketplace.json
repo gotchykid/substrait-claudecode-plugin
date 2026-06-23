@@ -1,0 +1,14 @@
+{
+  "name": "substrait",
+  "owner": {
+    "name": "gotchykid"
+  },
+  "description": "Substrait platform tooling for Claude Code — build apps to the upload/deploy contract and ship them from the terminal.",
+  "plugins": [
+    {
+      "name": "substrait",
+      "source": "./substrait-plugin",
+      "description": "Build and deploy apps on the Substrait platform from Claude Code: the substrait-app skill plus /substrait:link and /substrait:deploy."
+    }
+  ]
+}
