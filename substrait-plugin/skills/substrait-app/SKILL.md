@@ -156,5 +156,7 @@ way you update any plugin:
 /plugin update substrait
 ```
 
-That pulls the latest version from the marketplace the plugin was installed from. There's
-no separate self-update hook to manage.
+That pulls the latest version from the marketplace the plugin was installed from. The
+plugin doesn't self-update, but a `SessionStart` hook checks once a day (fail-silent)
+whether a newer version is published and, if so, nudges you to run the command above —
+it never changes any files itself.
