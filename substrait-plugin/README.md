@@ -7,10 +7,10 @@ terminal. The plugin bundles:
   on port 8000, `cicd/` Dockerfiles, optional React+Vite+Tailwind `frontend/`, Flyway
   migrations); and
 - two slash commands:
-  - **`/substrait:link`** — set your portal URL + personal access token, then link this
-    directory to one of your Substrait apps.
+  - **`/substrait:link`** — save this project's portal URL + app-scoped deploy token (the
+    token determines which app this project deploys to).
   - **`/substrait:deploy`** — package the project (source only) and deploy it to the linked
-    app (`--watch` to follow the build; `--new "App name"` to create + link a fresh app).
+    app (`--watch` to follow the build).
 
 ## Install
 
@@ -21,16 +21,15 @@ terminal. The plugin bundles:
 
 ## Set up & deploy
 
-1. In the Substrait portal, open the **Upload** tab → **Personal access tokens** → create
-   one and copy the `sbt_…` value.
-2. In your project, run `/substrait:link` and paste the token + portal URL when prompted,
-   then pick the app to link (or skip to step 3 with `--new`).
-3. Run `/substrait:deploy` to ship. First time on a new app:
-   `/substrait:deploy --new "My App"`.
+1. In the Substrait portal, open your app → its **Deploy** tab → **Create deploy token**,
+   and copy the `sbd_…` value (shown once). The app must already exist — a deploy token is
+   scoped to a single app.
+2. In your project, run `/substrait:link` and paste the token + portal URL when prompted.
+3. Run `/substrait:deploy` to ship (add `--watch` to follow the build to the live URL).
 
-Credentials are stored in `~/.substrait/config.json` (chmod 600); the per-project link is
-in `./.substrait/project.json` (gitignored). You can also set `SUBSTRAIT_PORTAL_URL` /
-`SUBSTRAIT_TOKEN` in the environment to override the config file.
+Config is **per project** in `./.substrait/config.json` (chmod 600, gitignored) — portal
+URL + the app-scoped token. You can override with `SUBSTRAIT_PORTAL_URL` / `SUBSTRAIT_TOKEN`
+in the environment.
 
 ## Maintainers
 

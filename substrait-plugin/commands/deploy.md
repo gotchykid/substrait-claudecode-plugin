@@ -1,23 +1,19 @@
 ---
 description: Package the current project (source only) and deploy it to its linked Substrait app
-argument-hint: "[--new \"App name\"]"
 allowed-tools: Bash
 ---
 
 You are deploying the current project to **Substrait**. The deploy script zips the project
-(source only), uploads it, and (with `--watch`) follows the build until the preview is live.
+(source only), uploads it to the app the project's deploy token is bound to, and (with
+`--watch`) follows the build until the preview is live.
 
-1. **Check link/auth state:**
+1. **Check the link:**
    `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" status`
-   - If auth is NOT configured, stop and tell the user to run `/substrait:link` first.
-   - If auth is fine but this directory isn't linked, AND the user did not pass `--new`,
-     tell them to run `/substrait:link` (to attach an existing app) or re-run this command
-     as `/substrait:deploy --new "App name"` to create a new app. Do not guess a name.
+   If this project isn't linked, stop and tell the user to run `/substrait:link` first
+   (deploys are authorised by the app-scoped token saved during linking).
 
-2. **Deploy.** Run from the project root:
-   - Linked app:   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-deploy.sh" --watch`
-   - New app:      `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-deploy.sh" --new "<name>" --watch`
-     (use the name from `$ARGUMENTS`).
+2. **Deploy** from the project root:
+   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-deploy.sh" --watch`
 
 3. **Report the outcome:** the run number and, on success, the live preview URL. If the
    script reports a failure, surface the HTTP status / message and suggest checking the

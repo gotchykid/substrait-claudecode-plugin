@@ -2,15 +2,12 @@
 # Shared helpers for the Substrait plugin's link/deploy scripts. Sourced, not run —
 # so it sets no shell options of its own and never exits the caller.
 #
-# Config resolution (first hit wins):
-#   portal URL : $SUBSTRAIT_PORTAL_URL  ->  ~/.substrait/config.json "portal_url"
-#   token      : $SUBSTRAIT_TOKEN       ->  ~/.substrait/config.json "token"
-# The config file is written by `substrait-link.sh auth` (chmod 600). Per-project link
-# state lives in <project>/.substrait/project.json (written by `substrait-link.sh set`).
+# A deploy token is APP-scoped, so config is PER-PROJECT: it lives in this project's
+# .substrait/config.json (gitignored), written by `substrait-link.sh`. Resolution order:
+#   portal URL : $SUBSTRAIT_PORTAL_URL  ->  .substrait/config.json "portal_url"
+#   token      : $SUBSTRAIT_TOKEN       ->  .substrait/config.json "token"
 
-SUBSTRAIT_CONFIG_DIR="${SUBSTRAIT_CONFIG_DIR:-$HOME/.substrait}"
-SUBSTRAIT_CONFIG_FILE="$SUBSTRAIT_CONFIG_DIR/config.json"
-SUBSTRAIT_PROJECT_FILE=".substrait/project.json"   # relative to the project root (cwd)
+SUBSTRAIT_CONFIG_FILE="${SUBSTRAIT_CONFIG_FILE:-.substrait/config.json}"
 
 # _json_get FILE KEY -> prints the string value, or exits 1 if absent. Uses python3
 # (always present in a Claude Code env) so we need no jq dependency.
@@ -46,9 +43,9 @@ substrait_api() {
   local method="$1" path="$2"; shift 2
   local base token tmp status
   base="$(substrait_portal_url)" || {
-    echo "Not linked yet — run /substrait:link to set your portal URL and token." >&2; return 2; }
+    echo "Not linked yet — run /substrait:link to set this project's portal URL and token." >&2; return 2; }
   token="$(substrait_token)" || {
-    echo "No token configured — run /substrait:link to set one." >&2; return 2; }
+    echo "No deploy token configured — run /substrait:link." >&2; return 2; }
   tmp="$(mktemp)" || return 1
   status="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$method" \
     -H "Authorization: Bearer $token" "$base$path" "$@" 2>/dev/null)"

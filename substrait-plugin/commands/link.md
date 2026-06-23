@@ -1,37 +1,30 @@
 ---
-description: Link this project to a Substrait app (set your portal URL + token, then pick the app)
-argument-hint: "[app id or slug]"
+description: Link this project to a Substrait app with an app-scoped deploy token
 allowed-tools: Bash
 ---
 
-You are linking the current working directory to an app on the **Substrait** platform so
-the user can deploy it with `/substrait:deploy`. Work through these steps; do not skip the
-status check.
+You are linking the current working directory to one app on the **Substrait** platform so
+the user can deploy it with `/substrait:deploy`. A Substrait **deploy token** is scoped to a
+single app, so the token itself determines which app this project deploys to.
 
-1. **Check current state.** Run:
+1. **Check current state:**
    `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" status`
+   If it's already linked and the user only wanted to check, you're done.
 
-2. **Set up auth if needed.** If status reports auth is NOT configured, the user needs a
-   Substrait **personal access token**:
-   - Tell them to open the portal's **Upload** tab → **Personal access tokens** → create one,
-     and copy the `sbt_…` value (shown only once).
-   - Ask them for the token, and for their portal/API base URL (default
+2. **Get a deploy token.** The token must be created on the **specific app** the user wants
+   this project to deploy to:
+   - In the Substrait portal, open that app (Your apps → the app) → the **Deploy** tab →
+     **Create deploy token**, and copy the `sbd_…` value (shown once).
+   - The app must already exist. If the user hasn't created it yet, tell them to create it in
+     the portal first — a deploy token can only be minted for an existing app.
+   - Ask the user for the token and their portal/API base URL (default
      `https://api.substrait.build` — accept it unless they say otherwise).
-   - Save it: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" auth --portal-url <URL> --token <TOKEN>`
    - Never echo the token back in plain text in your summary.
 
-3. **List the user's apps:**
-   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" list`
+3. **Save + verify the link:**
+   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" save --portal-url <URL> --token <TOKEN>`
+   This writes `.substrait/config.json` (gitignored) and confirms which app the token is
+   bound to.
 
-4. **Pick the target.**
-   - If the user passed an app id or slug in `$ARGUMENTS`, match it to a listed app.
-   - Otherwise show the list and ask which app to link.
-   - If they have no apps yet, or want a fresh one, tell them to run
-     `/substrait:deploy --new "App name"` instead — that creates the app on first deploy and
-     links it automatically. This command only links to apps that already exist.
-
-5. **Link it:**
-   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" set --project-id <ID>`
-
-6. **Confirm** the linked slug + preview URL, and remind them they can now run
+4. **Confirm** the linked app + preview URL, and remind the user they can now run
    `/substrait:deploy` to ship the current code.

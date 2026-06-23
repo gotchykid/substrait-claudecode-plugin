@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Package the current project (source only) and deploy it to Substrait.
-#   (default)         redeploy the linked app (see /substrait:link)
-#   --new "App name"  create a brand-new app instead of using the link
-#   --watch           poll the deploy until it finishes and print the preview URL
-# Run from the project root (the dir containing backend/, frontend/, cicd/).
+# Package the current project (source only) and deploy it to its linked Substrait app.
+#   --watch   poll the deploy until it finishes and print the preview URL
+# The app is determined by the deploy token in .substrait/config.json (run /substrait:link
+# first). Run from the project root (the dir containing backend/, frontend/, cicd/).
 set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
@@ -13,15 +12,14 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 die() { echo "Error: $*" >&2; exit 1; }
 
 WATCH=0
-NEW_NAME=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --watch) WATCH=1; shift ;;
-    --new) NEW_NAME="${2:-}"; shift 2 ;;
     *) die "unknown arg: $1" ;;
   esac
 done
 
+[ -n "$(substrait_token 2>/dev/null)" ] || die "not linked — run /substrait:link first."
 [ -d backend ] || die "no backend/ here — run this from the project root (the dir with backend/, cicd/)."
 
 # 1. Zip the project root, source only. The platform discards build artifacts anyway,
@@ -45,45 +43,18 @@ if [ "$size" -gt "$max" ]; then
 fi
 echo "Packaged $((size/1024)) KB."
 
-# 2. Upload — to the linked app, or as a new app with --new.
-if [ -n "$NEW_NAME" ]; then
-  echo "Creating new app \"$NEW_NAME\"…"
-  body="$(substrait_api POST /api/projects/upload \
-    -F "file=@$zip_path;type=application/zip;filename=upload.zip" \
-    -F "display_name=$NEW_NAME" -F "backend_stack=fastapi")" || exit $?
-elif [ -f "$SUBSTRAIT_PROJECT_FILE" ]; then
-  pid="$(_json_get "$SUBSTRAIT_PROJECT_FILE" project_id)" || die "corrupt .substrait/project.json — re-run /substrait:link."
-  slug="$(_json_get "$SUBSTRAIT_PROJECT_FILE" slug)"
-  echo "Deploying to linked app: $slug (project $pid)…"
-  body="$(substrait_api POST "/api/projects/$pid/upload" \
-    -F "file=@$zip_path;type=application/zip;filename=upload.zip" \
-    -F "backend_stack=fastapi")" || exit $?
-else
-  die "not linked — run /substrait:link first, or pass --new \"App name\" to create a new app."
-fi
-
+# 2. Deploy the token's app (the app is inferred server-side from the token).
+echo "Deploying…"
+body="$(substrait_api POST /api/deploy \
+  -F "file=@$zip_path;type=application/zip;filename=upload.zip" \
+  -F "backend_stack=fastapi")" || exit $?
 case "${HTTP_STATUS:-}" in
   200|201|202) : ;;
-  *) die "upload failed (HTTP $HTTP_STATUS): $body" ;;
+  *) die "deploy failed (HTTP $HTTP_STATUS): $body" ;;
 esac
 
 run_id="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("run_id",""))' "$body" 2>/dev/null)"
 host="$(python3 -c 'import json,sys; p=json.loads(sys.argv[1]).get("project",{}); print(p.get("preview_hostname") or (p.get("slug","")+".apps.substrait.build"))' "$body" 2>/dev/null)"
-proj_id="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("project",{}).get("id",""))' "$body" 2>/dev/null)"
-
-# A brand-new app: persist the link so the next /substrait:deploy targets the same app.
-if [ -n "$NEW_NAME" ] && [ -n "$proj_id" ]; then
-  mkdir -p .substrait
-  python3 - "$body" <<'PY'
-import json, sys
-p = json.loads(sys.argv[1]).get("project", {})
-host = p.get("preview_hostname") or (p.get("slug", "") + ".apps.substrait.build")
-json.dump({"project_id": p["id"], "slug": p["slug"], "host": host}, open(".substrait/project.json", "w"), indent=2)
-PY
-  grep -qx '.substrait/' .gitignore 2>/dev/null || printf '\n# Substrait CLI link state\n.substrait/\n' >> .gitignore
-  echo "Created and linked new app: $(_json_get "$SUBSTRAIT_PROJECT_FILE" slug)."
-fi
-
 echo "Deploy queued — run #$run_id."
 
 if [ "$WATCH" -ne 1 ]; then
@@ -91,13 +62,13 @@ if [ "$WATCH" -ne 1 ]; then
   exit 0
 fi
 
-# 3. Poll the deployment history until this run reaches a terminal state.
+# 3. Poll the deploy status until this run reaches a terminal state.
 echo "Watching deploy… (Ctrl-C to stop watching; the deploy keeps running)"
 deadline=$(( $(date +%s) + 900 ))   # 15 min ceiling
 last=""
 while [ "$(date +%s)" -lt "$deadline" ]; do
   sleep 8
-  dep="$(substrait_api GET "/api/projects/$proj_id/deployments")" || continue
+  dep="$(substrait_api GET /api/deploy/status)" || continue
   [ "${HTTP_STATUS:-}" = "200" ] || continue
   state="$(python3 - "$dep" "$run_id" <<'PY'
 import json, sys
