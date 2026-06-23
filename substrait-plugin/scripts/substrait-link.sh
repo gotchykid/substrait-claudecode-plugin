@@ -22,8 +22,8 @@ cmd_save() {
       *) die "unknown arg: $1" ;;
     esac
   done
-  [ -n "$portal" ] || die "--portal-url is required (e.g. https://api.substrait.build)"
   [ -n "$token" ]  || die "--token is required (create one on the app's Deploy tab)"
+  portal="${portal:-$SUBSTRAIT_DEFAULT_PORTAL}"   # default to the hosted API; no need to ask
 
   mkdir -p .substrait
   umask 177

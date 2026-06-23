@@ -17,14 +17,14 @@ single app, so the token itself determines which app this project deploys to.
      **Create deploy token**, and copy the `sbd_…` value (shown once).
    - The app must already exist. If the user hasn't created it yet, tell them to create it in
      the portal first — a deploy token can only be minted for an existing app.
-   - Ask the user for the token and their portal/API base URL (default
-     `https://api.substrait.build` — accept it unless they say otherwise).
-   - Never echo the token back in plain text in your summary.
+   - Ask the user **only for the token**. Don't ask for a portal URL — it defaults to the
+     hosted API (`https://api.substrait.build`). Never echo the token back in plain text.
 
 3. **Save + verify the link:**
-   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" save --portal-url <URL> --token <TOKEN>`
+   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" save --token <TOKEN>`
    This writes `.substrait/config.json` (gitignored) and confirms which app the token is
-   bound to.
+   bound to. Only if the user is on a **self-hosted** Substrait portal, also pass
+   `--portal-url <URL>`.
 
 4. **Confirm** the linked app + preview URL, and remind the user they can now run
    `/substrait:deploy` to ship the current code.

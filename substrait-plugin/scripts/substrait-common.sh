@@ -8,6 +8,9 @@
 #   token      : $SUBSTRAIT_TOKEN       ->  .substrait/config.json "token"
 
 SUBSTRAIT_CONFIG_FILE="${SUBSTRAIT_CONFIG_FILE:-.substrait/config.json}"
+# The hosted Substrait API. Used unless overridden (self-hosted portal) via
+# $SUBSTRAIT_PORTAL_URL, a config portal_url, or `substrait-link.sh save --portal-url`.
+SUBSTRAIT_DEFAULT_PORTAL="https://api.substrait.build"
 
 # _json_get FILE KEY -> prints the string value, or exits 1 if absent. Uses python3
 # (always present in a Claude Code env) so we need no jq dependency.
@@ -27,8 +30,8 @@ PY
 
 substrait_portal_url() {
   if [ -n "${SUBSTRAIT_PORTAL_URL:-}" ]; then printf '%s' "${SUBSTRAIT_PORTAL_URL%/}"; return 0; fi
-  local v; v="$(_json_get "$SUBSTRAIT_CONFIG_FILE" portal_url)" || return 1
-  printf '%s' "${v%/}"
+  local v; if v="$(_json_get "$SUBSTRAIT_CONFIG_FILE" portal_url)"; then printf '%s' "${v%/}"; return 0; fi
+  printf '%s' "$SUBSTRAIT_DEFAULT_PORTAL"   # hosted default — no need to ask
 }
 
 substrait_token() {
