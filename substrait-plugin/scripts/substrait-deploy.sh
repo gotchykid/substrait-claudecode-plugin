@@ -45,16 +45,16 @@ echo "Packaged $((size/1024)) KB."
 
 # 2. Deploy the token's app (the app is inferred server-side from the token).
 echo "Deploying…"
-body="$(substrait_api POST /api/deploy \
+substrait_call POST /api/deploy \
   -F "file=@$zip_path;type=application/zip;filename=upload.zip" \
-  -F "backend_stack=fastapi")" || exit $?
-case "${HTTP_STATUS:-}" in
+  -F "backend_stack=fastapi" || exit $?
+case "${SUBSTRAIT_STATUS:-}" in
   200|201|202) : ;;
-  *) die "deploy failed (HTTP $HTTP_STATUS): $body" ;;
+  *) die "deploy failed (HTTP $SUBSTRAIT_STATUS): $SUBSTRAIT_BODY" ;;
 esac
 
-run_id="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("run_id",""))' "$body" 2>/dev/null)"
-host="$(python3 -c 'import json,sys; p=json.loads(sys.argv[1]).get("project",{}); print(p.get("preview_hostname") or (p.get("slug","")+".apps.substrait.build"))' "$body" 2>/dev/null)"
+run_id="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1]).get("run_id",""))' "$SUBSTRAIT_BODY" 2>/dev/null)"
+host="$(python3 -c 'import json,sys; p=json.loads(sys.argv[1]).get("project",{}); print(p.get("preview_hostname") or (p.get("slug","")+".apps.substrait.build"))' "$SUBSTRAIT_BODY" 2>/dev/null)"
 echo "Deploy queued — run #$run_id."
 
 if [ "$WATCH" -ne 1 ]; then
@@ -68,9 +68,9 @@ deadline=$(( $(date +%s) + 900 ))   # 15 min ceiling
 last=""
 while [ "$(date +%s)" -lt "$deadline" ]; do
   sleep 8
-  dep="$(substrait_api GET /api/deploy/status)" || continue
-  [ "${HTTP_STATUS:-}" = "200" ] || continue
-  state="$(python3 - "$dep" "$run_id" <<'PY'
+  substrait_call GET /api/deploy/status || continue
+  [ "${SUBSTRAIT_STATUS:-}" = "200" ] || continue
+  state="$(python3 - "$SUBSTRAIT_BODY" "$run_id" <<'PY'
 import json, sys
 deps = json.loads(sys.argv[1]); rid = sys.argv[2]
 row = next((d for d in deps if str(d.get("id")) == str(rid)), (deps[0] if deps else None))

@@ -36,22 +36,28 @@ substrait_token() {
   _json_get "$SUBSTRAIT_CONFIG_FILE" token
 }
 
-# substrait_api METHOD PATH [extra curl args...]
-# Prints the response body to stdout and sets HTTP_STATUS. Returns 2 if unconfigured,
-# 1 on a transport error.
-substrait_api() {
+# substrait_call METHOD PATH [extra curl args...]
+# Performs the request and sets two globals in the CURRENT shell:
+#   SUBSTRAIT_BODY    — the response body
+#   SUBSTRAIT_STATUS  — the HTTP status code
+# Returns 2 if unconfigured, else curl's exit code.
+#
+# IMPORTANT: call this as a plain statement, e.g.
+#       substrait_call GET /api/deploy/app || exit $?
+# NEVER inside a command substitution ( x="$(substrait_call ...)" ) — that runs it in a
+# subshell, so the globals it sets would not reach the caller. (That was the original bug.)
+substrait_call() {
   local method="$1" path="$2"; shift 2
-  local base token tmp status
+  local base token tmp
   base="$(substrait_portal_url)" || {
     echo "Not linked yet — run /substrait:link to set this project's portal URL and token." >&2; return 2; }
   token="$(substrait_token)" || {
     echo "No deploy token configured — run /substrait:link." >&2; return 2; }
   tmp="$(mktemp)" || return 1
-  status="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$method" \
+  SUBSTRAIT_STATUS="$(curl -sS -o "$tmp" -w '%{http_code}' -X "$method" \
     -H "Authorization: Bearer $token" "$base$path" "$@" 2>/dev/null)"
   local rc=$?
-  HTTP_STATUS="$status"
-  cat "$tmp"
+  SUBSTRAIT_BODY="$(cat "$tmp")"
   rm -f "$tmp"
   return $rc
 }

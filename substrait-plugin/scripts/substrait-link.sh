@@ -35,11 +35,10 @@ PY
   chmod 600 "$SUBSTRAIT_CONFIG_FILE"
 
   # Verify the token + discover the app it's bound to.
-  local body; body="$(substrait_api GET /api/deploy/app)"; local rc=$?
-  [ $rc -eq 0 ] || exit $rc
-  [ "${HTTP_STATUS:-}" = "200" ] || die "token rejected (HTTP $HTTP_STATUS): $body"
+  substrait_call GET /api/deploy/app || exit $?
+  [ "${SUBSTRAIT_STATUS:-}" = "200" ] || die "token rejected (HTTP $SUBSTRAIT_STATUS): $SUBSTRAIT_BODY"
   # Cache slug/host alongside the creds for nicer messages.
-  python3 - "$SUBSTRAIT_CONFIG_FILE" "$body" <<'PY'
+  python3 - "$SUBSTRAIT_CONFIG_FILE" "$SUBSTRAIT_BODY" <<'PY'
 import json, sys
 path, body = sys.argv[1], sys.argv[2]
 cfg = json.load(open(path)); p = json.loads(body)
@@ -64,16 +63,16 @@ cmd_status() {
     echo "This project is not linked — run /substrait:link."
     return 0
   fi
-  local body; body="$(substrait_api GET /api/deploy/app)"; local rc=$?
-  if [ $rc -eq 0 ] && [ "${HTTP_STATUS:-}" = "200" ]; then
-    python3 - "$body" "$portal" <<'PY'
+  substrait_call GET /api/deploy/app
+  if [ $? -eq 0 ] && [ "${SUBSTRAIT_STATUS:-}" = "200" ]; then
+    python3 - "$SUBSTRAIT_BODY" "$portal" <<'PY'
 import json, sys
 p = json.loads(sys.argv[1])
 host = p.get("preview_hostname") or (p["slug"] + ".apps.substrait.build")
 print(f"Linked to {p['slug']} ({p.get('display_name','')}) on {sys.argv[2]} — https://{host}")
 PY
   else
-    echo "Configured for $portal, but the token was rejected (HTTP $HTTP_STATUS) — re-run /substrait:link."
+    echo "Configured for $portal, but the token was rejected (HTTP ${SUBSTRAIT_STATUS:-?}) — re-run /substrait:link."
   fi
 }
 
