@@ -49,16 +49,8 @@ remote_ver="$(curl -fsS --max-time 5 "$RAW" 2>/dev/null | _skill_version)"
 greater="$(printf '%s\n%s\n' "$local_ver" "$remote_ver" | sort | tail -1)"
 [ "$greater" = "$remote_ver" ] || exit 0
 
-# SessionStart: inject a note so Claude surfaces the nudge to the user.
-python3 - "$local_ver" "$remote_ver" <<'PY' 2>/dev/null || exit 0
-import json, sys
-local, remote = sys.argv[1], sys.argv[2]
-print(json.dumps({"hookSpecificOutput": {
-    "hookEventName": "SessionStart",
-    "additionalContext": (
-        f"A newer substrait plugin is available ({local} -> {remote}). "
-        "Let the user know they can update it by running: /plugin update substrait"
-    ),
-}}))
-PY
+# SessionStart: inject a note so Claude surfaces the nudge to the user. Built with printf
+# (no python) — the message has no JSON-special characters that need escaping.
+msg="A newer substrait plugin is available ($local_ver -> $remote_ver). Let the user know they can update it by running: /plugin update substrait"
+printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$msg"
 exit 0
