@@ -31,3 +31,9 @@ single app; the link flow obtains one for the app the user chooses.
 
 4. **Confirm** the linked app + preview URL, and remind the user they can now run
    `/substrait:deploy` to ship the current code.
+
+Note: on a successful link, the script also records a **"Substrait deployment" section
+in the project's `CLAUDE.md`** (creating the file if needed) so every future session
+knows the deploy contract without loading the skill. It's a marker-delimited block the
+plugin keeps current on later deploys; deleting the whole block opts the project out —
+don't re-add it by hand if the user removed it.
