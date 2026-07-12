@@ -4,13 +4,15 @@ allowed-tools: Bash
 ---
 
 You are deploying the current project to **Substrait**. The deploy script zips the project
-(source only), uploads it to the app the project's deploy token is bound to, and (with
+(source only), uploads it to the app this project is linked to, and (with
 `--watch`) follows the build until the preview is live.
 
 1. **Check the link:**
    `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" status`
-   If this project isn't linked, stop and tell the user to run `/substrait:link` first
-   (deploys are authorised by the app-scoped token saved during linking).
+   If this project isn't linked, stop and tell the user to run `/substrait:link` first.
+   Deploys are authorised either by the machine's account link (personal token + this
+   project's bound app slug) or by an app-scoped deploy token saved in the project —
+   linking sets up whichever the user chose.
 
 2. **Generate the endpoint inventory** — only when the backend serves no OpenAPI spec.
    After each deploy goes live, the platform harvests the app's own spec
