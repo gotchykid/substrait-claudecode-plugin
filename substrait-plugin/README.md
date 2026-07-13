@@ -20,6 +20,15 @@ terminal. The plugin bundles:
 /plugin install substrait@substrait
 ```
 
+**Using the Claude desktop app?** The `/plugin` commands are terminal-only. Run the two
+commands above once from the `claude` CLI in any terminal — CLI and desktop share the same
+plugin store (`~/.claude/plugins`), so the plugin is immediately available in desktop
+sessions too. (Alternatively, use the desktop plugin manager: the **+** button next to the
+prompt box → **Plugins**.) Projects scaffolded by Substrait also ship a
+`.claude/settings.json` that pre-registers this marketplace and enables the plugin, so
+opening such a project offers the plugin automatically on every surface, including the
+desktop app and claude.ai/code.
+
 ## Set up & deploy
 
 1. In your project, run `/substrait:link`. It opens the portal in your browser (you're
