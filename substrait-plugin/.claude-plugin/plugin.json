@@ -1,6 +1,6 @@
 {
   "name": "substrait",
-  "description": "Build and deploy apps on the Substrait platform from Claude Code. Bundles the substrait-app skill (scaffold apps to the upload/deploy contract) plus /substrait:link and /substrait:deploy to connect a local project to a Substrait app and ship it without leaving the terminal.",
+  "description": "Build and deploy apps on the Substrait platform from Claude Code. Bundles the substrait-app skill (scaffold apps to the upload/deploy contract) plus /substrait:link and /substrait:deploy to connect a local project to a Substrait app and ship it without leaving the terminal, and /substrait:library to browse the platform's API Library and design apps against existing APIs.",
   "homepage": "https://app.substrait.build",
   "repository": "https://github.com/gotchykid/substrait-claudecode-plugin",
   "keywords": ["substrait", "deploy", "fastapi", "upload"]
