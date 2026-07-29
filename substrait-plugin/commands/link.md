@@ -12,6 +12,14 @@ the user can deploy it with `/substrait:deploy`. Two credential models exist:
 - **Per-app deploy token** (`sbd_…`, the original flow): scoped to a single app, stored in
   the project. Still fully supported — and it wins over the account token if both exist.
 
+**If any authentication has to be established below (account link or per-app token), the
+Substrait portal/API URL is REQUIRED — there is no default.** If the user supplied a URL
+as the command argument (`$ARGUMENTS`), use it; otherwise **ask the user for their
+Substrait portal/API URL** (e.g. `https://api.substrait.build` hosted, or a tenant/demo
+URL like `https://api.demo.substrait.build` — the portal's connect page shows it) and pass
+it as `--portal-url <URL>`. It's only needed when first writing auth to config; if the
+machine/project is already linked, skip straight to binding.
+
 1. **Check current state:**
    `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" status`
    It reports both layers: whether this machine has an account link, and what this project
@@ -20,16 +28,16 @@ the user can deploy it with `/substrait:deploy`. Two credential models exist:
 
 2. **Ensure the account link (once per machine).** If status says there's no account link
    (also available standalone as `/substrait:login`):
-   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" account`
+   `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" account --portal-url <URL>`
    This opens the Substrait portal in the user's browser, where they (already logged in)
    **authorize Claude Code on their account** — the personal token is minted and returned
    to the CLI automatically, no copy/paste. The command prints a URL and a short
    verification code; relay both to the user in case the browser didn't open, and tell
    them to complete the authorization in the browser. It blocks until they approve.
-   - Only on a **self-hosted** Substrait portal, pass `--portal-url <URL>`.
+   - `--portal-url` is **required** (the URL from the preamble); the command errors without it.
    - Headless / CI fallback: the user mints a token on the portal's **Access tokens**
-     page, then `… substrait-link.sh save-account --token <TOKEN>`. Ask **only for the
-     token**; never echo it back in plain text.
+     page, then `… substrait-link.sh save-account --token <TOKEN> --portal-url <URL>`
+     (`--portal-url` required). Ask **only for the token**; never echo it back in plain text.
 
 3. **Bind this project to an app.** With the account link in place:
    - List the user's apps: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/substrait-link.sh" apps`
@@ -40,11 +48,10 @@ the user can deploy it with `/substrait:deploy`. Two credential models exist:
 
 4. **Per-app token fallback.** If the user prefers a token scoped to one app (shared
    machines, CI secrets):
-   - Browser flow: `… substrait-link.sh login` (pick the app in the browser; the `sbd_…`
-     token is fetched automatically).
+   - Browser flow: `… substrait-link.sh login --portal-url <URL>` (pick the app in the
+     browser; the `sbd_…` token is fetched automatically). `--portal-url` is **required**.
    - Paste flow: mint on the app's **Deploy** tab, then
-     `… substrait-link.sh save --token <TOKEN>` (add `--portal-url <URL>` only for
-     self-hosted).
+     `… substrait-link.sh save --token <TOKEN> --portal-url <URL>` (`--portal-url` required).
 
 5. **Confirm** the linked app + preview URL, and remind the user they can now run
    `/substrait:deploy` to ship the current code.
