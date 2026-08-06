@@ -1,6 +1,6 @@
 ---
 name: substrait-app
-version: 2026.08.03.090000
+version: 2026.08.07.100000
 description: Build apps that deploy on the Substrait platform via upload mode (GitHub-connected apps deploy from their pushed branch with the same commands — no zip). Use whenever the user asks to build, scaffold, or package an app "for Substrait", "to upload to Substrait", or for the Substrait upload/deploy contract. The zip contains app code plus its Dockerfile(s): a backend that serves GET /health on port 8000 with its API under /api (any language or framework — the scaffold uses FastAPI) and a cicd/Dockerfile.backend, plus Flyway migrations, and an optional frontend served on port 80 (any framework — the scaffold uses React + Vite + Tailwind) with a cicd/Dockerfile.frontend. The platform generates only the Kubernetes manifests, so you never write k8s or deal with the app slug.
 ---
 
@@ -345,14 +345,16 @@ and treat a user's deletion of the block as an opt-out.
 
 This skill ships inside the **`substrait` Claude Code plugin** (it's the plugin's bundled
 skill, alongside the `/substrait:login`, `/substrait:link`, `/substrait:deploy`,
-`/substrait:env` and `/substrait:library` commands). Update it the way you update any
-plugin:
+`/substrait:env` and `/substrait:library` commands). Update it from a terminal:
 
 ```
-/plugin update substrait
+claude plugin update substrait
 ```
+
+(Inside a Claude Code session, the `/plugin` slash command ignores arguments and just
+opens the plugin manager — from there: **Installed** tab → `substrait` → **Update**.)
 
 That pulls the latest version from the marketplace the plugin was installed from. The
 plugin doesn't self-update, but a `SessionStart` hook checks once a day (fail-silent)
-whether a newer version is published and, if so, nudges you to run the command above —
+whether a newer version is published and, if so, nudges you to update —
 it never changes any files itself.
