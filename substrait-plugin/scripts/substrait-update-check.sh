@@ -3,7 +3,7 @@
 #
 # Once per 24h (throttled, fail-silent) it asks GitHub whether a newer version of
 # the bundled substrait-app skill has been published, and if so emits a one-line
-# nudge to run `claude plugin update substrait` (the /plugin slash command ignores
+# nudge to run `claude plugin update substrait@substrait` (the /plugin slash command ignores
 # arguments — it only opens the plugin manager UI). It NEVER mutates the plugin's
 # files — applying the update is the user's action, so this can't race the
 # plugin manager. Any network/parse error exits 0 so it never blocks a session.
@@ -52,6 +52,6 @@ greater="$(printf '%s\n%s\n' "$local_ver" "$remote_ver" | sort | tail -1)"
 
 # SessionStart: inject a note so Claude surfaces the nudge to the user. Built with printf
 # (no python) — the message has no JSON-special characters that need escaping.
-msg="A newer substrait plugin is available ($local_ver -> $remote_ver). Let the user know they can update it by running \`claude plugin update substrait\` in a terminal (NOT the /plugin slash command — that only opens the plugin manager; in there it's Installed -> substrait -> Update)."
+msg="A newer substrait plugin is available ($local_ver -> $remote_ver). Let the user know they can update it by running \`claude plugin update substrait@substrait\` in a terminal (NOT the /plugin slash command — that only opens the plugin manager; in there it's Installed -> substrait -> Update)."
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$msg"
 exit 0
