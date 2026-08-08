@@ -6,12 +6,20 @@ terminal. The plugin bundles:
 - the **`substrait-app`** skill — scaffolds a contract-compliant app (FastAPI `backend/`
   on port 8000, `cicd/` Dockerfiles, optional React+Vite+Tailwind `frontend/`, Flyway
   migrations); and
-- two slash commands:
-  - **`/substrait:link`** — link this project to one of your apps. Opens the portal in your
-    browser so you pick the app while logged in; the app-scoped deploy token is fetched
-    automatically (no copy/paste). Falls back to pasting a token for headless/CI.
-  - **`/substrait:deploy`** — package the project (source only) and deploy it to the linked
-    app (`--watch` to follow the build).
+- six slash commands:
+  - **`/substrait:init`** — initialize the current folder as a Substrait project: scaffold
+    a new app in an empty folder, or audit and convert an existing codebase to the deploy
+    contract — then link it to an app.
+  - **`/substrait:login`** — authenticate this machine with your Substrait account (mints
+    the personal access token; one browser authorization, no copy/paste).
+  - **`/substrait:link`** — link this project to one of your apps (pick or create it), so
+    deploys know where to ship. Headless/CI falls back to pasting a token.
+  - **`/substrait:deploy`** — deploy the project to the linked app: source-only zip upload,
+    or a pushed-branch trigger for GitHub-connected apps (`--watch` to follow the build).
+  - **`/substrait:env`** — view and set the linked app's environment variables and secrets
+    (secrets are write-only; changes live-apply to a running app).
+  - **`/substrait:library`** — browse the platform's API Library and design an app against
+    existing APIs.
 
 ## Install
 

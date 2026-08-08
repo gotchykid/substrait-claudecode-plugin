@@ -8,7 +8,7 @@
     {
       "name": "substrait",
       "source": "./substrait-plugin",
-      "description": "Build and deploy apps on the Substrait platform from Claude Code: the substrait-app skill plus /substrait:link and /substrait:deploy."
+      "description": "Build and deploy apps on the Substrait platform from Claude Code: the substrait-app skill plus /substrait:init, /substrait:login, /substrait:link, /substrait:deploy, /substrait:env and /substrait:library."
     }
   ]
 }
