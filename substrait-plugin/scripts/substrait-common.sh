@@ -155,6 +155,21 @@ substrait_compliance_check() {
     echo "✗ substrait.yaml still carries the scaffold placeholder description — replace it with what this app actually does."
     fails=$((fails+1))
   fi
+  # The database is explicit: Flyway migrations without a `database:` engine in the
+  # manifest fail server-side VALIDATING (the DB is only provisioned when declared),
+  # so mirror it here. Checked only when a manifest exists — the missing-manifest
+  # violation above already covers the rest.
+  if [ -f substrait.yaml ] \
+     && ! grep -Eq '^[[:space:]]*database[[:space:]]*:' substrait.yaml; then
+    local mig_dir
+    for mig_dir in backend/resources/db/migration resources/db/migration; do
+      if [ -d "$mig_dir" ] && ls "$mig_dir"/*.sql >/dev/null 2>&1; then
+        echo "✗ the app ships Flyway migrations ($mig_dir/) but substrait.yaml declares no \`database:\` — the platform provisions the database (and injects DATABASE_URL) only when declared. Add \`database: oceanbase\` (the default; or \`postgres\`/\`mysql\` for the app's own single-node pod) to substrait.yaml, or remove the migrations if the app truly uses no database."
+        fails=$((fails+1))
+        break
+      fi
+    done
+  fi
   # k8s/ is platform-owned and must not be shipped.
   if [ -d k8s ]; then
     echo "✗ a k8s/ directory is present — the platform owns the Kubernetes manifests and discards anything you ship there. Remove k8s/."
