@@ -70,6 +70,9 @@ orchestrates.
      `https://api.demo.substrait.build`). Then bind: for a brand-new app
      `… substrait-link.sh create --name "<NAME>"`; to deploy to an existing one,
      `… substrait-link.sh apps` and `… substrait-link.sh use --app <SLUG>`.
+   - Some workspaces have new-app creation from Claude Code disabled (a per-tenant
+     setting): `apps` warns on stderr and `create` is refused with the reason —
+     relay it and fall back to linking an existing app (or leave unlinked).
    - A successful link also writes/updates the CLAUDE.md contract block with the
      real app — that is the link script's job, don't duplicate it.
 
