@@ -8,9 +8,12 @@
 # files — applying the update is the user's action, so this can't race the
 # plugin manager. Any network/parse error exits 0 so it never blocks a session.
 #
-# Version source of truth is the `version:` in skills/substrait-app/SKILL.md
-# (a sortable UTC stamp, e.g. 2026.06.23.061341) — the same field publish-plugin.sh
-# bumps. We compare the installed copy against the one published in the public repo.
+# Version source of truth is the PLUGIN RELEASE version in .claude-plugin/plugin.json
+# (a sortable UTC stamp, e.g. 2026.08.13.053251) — bumped on ANY plugin change
+# (commands, scripts, skill, hooks); publish-plugin.sh refuses to publish without it.
+# The skill's own SKILL.md `version:` is the SCAFFOLD version (it drives the
+# platform's scaffold-staleness surfacing) and is only used here as a fallback when
+# either side predates the plugin.json version field.
 #
 # To disable: the user removes/disables the substrait plugin's SessionStart hook.
 set -u
@@ -19,6 +22,7 @@ set -u
 ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." 2>/dev/null && pwd)}"
 [ -n "$ROOT" ] || exit 0
 LOCAL_SKILL="$ROOT/skills/substrait-app/SKILL.md"
+LOCAL_MANIFEST="$ROOT/.claude-plugin/plugin.json"
 [ -f "$LOCAL_SKILL" ] || exit 0
 
 STAMP="$ROOT/.last-version-check"
@@ -35,13 +39,21 @@ echo "$now" > "$STAMP" 2>/dev/null || true
 _skill_version() {  # reads SKILL.md frontmatter `version:` from stdin
   sed -n 's/^version:[[:space:]]*//p' | head -1 | tr -d '[:space:]'
 }
+_plugin_version() {  # reads plugin.json "version" from stdin (flat, server-controlled)
+  sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1
+}
 
-local_ver="$(_skill_version < "$LOCAL_SKILL")"
+RAW_BASE="https://raw.githubusercontent.com/gotchykid/substrait-claudecode-plugin/main/substrait-plugin"
+
+# Prefer the plugin release version; fall back to the skill (scaffold) version when
+# either side predates the plugin.json version field.
+local_ver=""; [ -f "$LOCAL_MANIFEST" ] && local_ver="$(_plugin_version < "$LOCAL_MANIFEST")"
+remote_ver="$(curl -fsS --max-time 5 "$RAW_BASE/.claude-plugin/plugin.json" 2>/dev/null | _plugin_version)"
+if [ -z "$local_ver" ] || [ -z "$remote_ver" ]; then
+  local_ver="$(_skill_version < "$LOCAL_SKILL")"
+  remote_ver="$(curl -fsS --max-time 5 "$RAW_BASE/skills/substrait-app/SKILL.md" 2>/dev/null | _skill_version)"
+fi
 [ -n "$local_ver" ] || exit 0
-
-# Published SKILL.md in the public distribution repo (short timeout, fail-silent).
-RAW="https://raw.githubusercontent.com/gotchykid/substrait-claudecode-plugin/main/substrait-plugin/skills/substrait-app/SKILL.md"
-remote_ver="$(curl -fsS --max-time 5 "$RAW" 2>/dev/null | _skill_version)"
 [ -n "$remote_ver" ] || exit 0
 
 # Nothing to do if already current.
