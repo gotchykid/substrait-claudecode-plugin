@@ -70,9 +70,15 @@ orchestrates.
      `https://api.demo.substrait.build`). Then bind: for a brand-new app
      `… substrait-link.sh create --name "<NAME>"`; to deploy to an existing one,
      `… substrait-link.sh apps` and `… substrait-link.sh use --app <SLUG>`.
-   - Some workspaces have new-app creation from Claude Code disabled (a per-tenant
-     setting): `apps` warns on stderr and `create` is refused with the reason —
-     relay it and fall back to linking an existing app (or leave unlinked).
+   - **GitHub-only workspaces:** where zip uploads are switched off, a new app must be
+     born connected to a repo — `… substrait-link.sh create --name "<NAME>" --repo
+     <owner/repo> [--branch <BR>]` (`… substrait-link.sh repos` lists the repos the
+     Substrait GitHub App can reach; install it on the repo first if the list is
+     empty). `apps` warns on stderr when this applies, and a bare `create` is refused
+     with that same guidance. The code then has to be pushed to that repo — help the
+     user `git init` / `gh repo create` / push if it isn't there yet.
+   - With every deployment mode disabled, `create` is refused outright: relay the
+     reason and fall back to linking an existing app (or leave unlinked).
    - A successful link also writes/updates the CLAUDE.md contract block with the
      real app — that is the link script's job, don't duplicate it.
 
