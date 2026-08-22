@@ -16,7 +16,7 @@
         "url": "https://app.substrait.build"
       },
       "homepage": "https://app.substrait.build",
-      "repository": "https://github.com/gotchykid/substrait-claudecode-plugin",
+      "repository": "https://github.com/substrait-build/substrait-claudecode-plugin",
       "license": "MIT",
       "category": "deployment",
       "keywords": [

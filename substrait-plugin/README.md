@@ -26,7 +26,7 @@ terminal. The plugin bundles:
 ## Install
 
 ```
-/plugin marketplace add gotchykid/substrait-claudecode-plugin
+/plugin marketplace add substrait-build/substrait-claudecode-plugin
 /plugin install substrait@substrait
 ```
 
