@@ -86,8 +86,44 @@ fi
 greater="$(printf '%s\n%s\n' "$local_ver" "$remote_ver" | sort | tail -1)"
 [ "$greater" = "$remote_ver" ] || exit 0
 
+# Does THIS project carry its own project/local-scope install? It matters because
+# `claude plugin update` defaults to --scope user, so a project-scope copy (the shape every
+# scaffold produced before 2026-08-22, when .claude/settings.json still declared
+# enabledPlugins) is invisible to the plain command — the user updates, is told it worked,
+# and this project keeps running the old code.
+#
+# Matched on projectPath, NOT installPath: once two scopes are on the same version they share
+# one cache directory, so the install path cannot tell them apart. Pure awk — no jq or python
+# (Git Bash on Windows has neither).
+#
+# Deliberately never interpolates a path into the message: a Windows path is full of
+# backslashes and the JSON below is assembled by printf with no escaping.
+REGISTRY="$HOME/.claude/plugins/installed_plugins.json"
+HERE="${CLAUDE_PROJECT_DIR:-$PWD}"
+scope=""
+if [ -f "$REGISTRY" ] && [ -n "$HERE" ]; then
+  scope="$(awk -v here="$HERE" '
+    /"scope"[[:space:]]*:/ {
+      s = $0; sub(/.*"scope"[[:space:]]*:[[:space:]]*"/, "", s); sub(/".*/, "", s)
+      cur = s; next
+    }
+    /"projectPath"[[:space:]]*:/ {
+      p = $0; sub(/.*"projectPath"[[:space:]]*:[[:space:]]*"/, "", p); sub(/".*/, "", p)
+      if (p == here && (cur == "project" || cur == "local")) { print cur; exit }
+    }
+  ' "$REGISTRY" 2>/dev/null)"
+fi
+
+if [ "$scope" = "project" ] || [ "$scope" = "local" ]; then
+  cmd="claude plugin update substrait@substrait --scope $scope"
+  where=" This project has its OWN ${scope}-scope copy of the plugin, so the command MUST carry --scope $scope and MUST be run from this project's folder — the plain command updates only the user-scope copy and would silently leave this one behind."
+else
+  cmd="claude plugin update substrait@substrait"
+  where=""
+fi
+
 # SessionStart: inject a note so Claude surfaces the nudge to the user. Built with printf
 # (no python) — the message has no JSON-special characters that need escaping.
-msg="A newer substrait plugin is available ($local_ver -> $remote_ver). Let the user know they can update it by running \`claude plugin update substrait@substrait\` in a terminal (NOT the /plugin slash command — that only opens the plugin manager; in there it's Installed -> substrait -> Update)."
+msg="A newer substrait plugin is available ($local_ver -> $remote_ver). Let the user know they can update it by running \`$cmd\` in a terminal (NOT the /plugin slash command — that only opens the plugin manager; in there it's Installed -> substrait -> Update). In the Claude desktop app there is no Update button at all — open the built-in terminal with Ctrl+\` and run it there.$where"
 printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$msg"
 exit 0

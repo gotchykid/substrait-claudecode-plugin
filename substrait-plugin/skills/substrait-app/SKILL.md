@@ -400,6 +400,17 @@ claude plugin update substrait@substrait
 (Inside a Claude Code session, the `/plugin` slash command ignores arguments and just
 opens the plugin manager — from there: **Installed** tab → `substrait` → **Update**.)
 
+**In the Claude desktop app** there is no Update button — its plugin manager only enables,
+disables and uninstalls. Open the built-in terminal with **Ctrl+`** and run the command there.
+
+**If the plugin was installed from inside a project** (`claude plugin list` shows a row with
+`Scope: project`), the command above will NOT update it: `claude plugin update` defaults to
+`--scope user`. Run it from that project's folder as:
+
+```
+claude plugin update substrait@substrait --scope project
+```
+
 That pulls the latest version from the marketplace the plugin was installed from. The
 plugin doesn't self-update, but a `SessionStart` hook checks once a day (fail-silent)
 whether a newer version is published and, if so, nudges you to update —

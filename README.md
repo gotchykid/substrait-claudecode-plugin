@@ -44,6 +44,15 @@ by default a bundled `SessionStart` hook just checks once a day and nudges you t
 `claude plugin update substrait@substrait` in a terminal. To skip the nudge and have updates
 land on their own, run `/plugin` → **Marketplaces** → `substrait` → **Enable auto-update**.
 
+Two things that catch people out:
+
+- **The desktop app has no Update button.** Its plugin manager only enables, disables and
+  uninstalls. Open the built-in terminal with **Ctrl+`** and run the command there.
+- **`claude plugin update` defaults to `--scope user`.** If `claude plugin list` shows a row
+  with `Scope: project`, that copy is a separate install and the plain command will not touch
+  it — it keeps running the old code while telling you the update succeeded. Update it with
+  `claude plugin update substrait@substrait --scope project`, run from that project's folder.
+
 ## Set up & deploy
 
 1. In your project, run `/substrait:link`. It opens the portal in your browser (you're
