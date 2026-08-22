@@ -1,14 +1,35 @@
 {
   "name": "substrait",
   "owner": {
-    "name": "gotchykid"
+    "name": "Substrait",
+    "url": "https://app.substrait.build"
   },
   "description": "Substrait platform tooling for Claude Code — build apps to the upload/deploy contract and ship them from the terminal.",
   "plugins": [
     {
       "name": "substrait",
       "source": "./substrait-plugin",
-      "description": "Build and deploy apps on the Substrait platform from Claude Code: the substrait-app skill plus /substrait:init, /substrait:login, /substrait:link, /substrait:deploy, /substrait:env and /substrait:library."
+      "displayName": "Substrait",
+      "description": "Build and deploy apps on the Substrait platform from Claude Code: the substrait-app skill plus /substrait:init, /substrait:login, /substrait:logout, /substrait:link, /substrait:deploy, /substrait:env and /substrait:library.",
+      "author": {
+        "name": "Substrait",
+        "url": "https://app.substrait.build"
+      },
+      "homepage": "https://app.substrait.build",
+      "repository": "https://github.com/gotchykid/substrait-claudecode-plugin",
+      "license": "MIT",
+      "category": "deployment",
+      "keywords": [
+        "substrait",
+        "deploy",
+        "deployment",
+        "paas",
+        "fastapi",
+        "docker",
+        "kubernetes",
+        "flyway",
+        "upload"
+      ]
     }
   ]
 }

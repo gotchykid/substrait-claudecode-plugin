@@ -6,12 +6,14 @@ terminal. The plugin bundles:
 - the **`substrait-app`** skill — scaffolds a contract-compliant app (FastAPI `backend/`
   on port 8000, `cicd/` Dockerfiles, optional React+Vite+Tailwind `frontend/`, Flyway
   migrations); and
-- six slash commands:
+- seven slash commands:
   - **`/substrait:init`** — initialize the current folder as a Substrait project: scaffold
     a new app in an empty folder, or audit and convert an existing codebase to the deploy
     contract — then link it to an app.
   - **`/substrait:login`** — authenticate this machine with your Substrait account (mints
     the personal access token; one browser authorization, no copy/paste).
+  - **`/substrait:logout`** — sign this machine out again: revokes the login-minted token on
+    the portal and drops the stored credential (`--project` also unbinds this folder).
   - **`/substrait:link`** — link this project to one of your apps (pick or create it), so
     deploys know where to ship. Headless/CI falls back to pasting a token.
   - **`/substrait:deploy`** — deploy the project to the linked app: source-only zip upload,
@@ -37,6 +39,11 @@ prompt box → **Plugins**.) Projects scaffolded by Substrait also ship a
 opening such a project offers the plugin automatically on every surface, including the
 desktop app and claude.ai/code.
 
+**Staying current.** Claude Code leaves auto-update **off** for third-party marketplaces, so
+by default a bundled `SessionStart` hook just checks once a day and nudges you to run
+`claude plugin update substrait@substrait` in a terminal. To skip the nudge and have updates
+land on their own, run `/plugin` → **Marketplaces** → `substrait` → **Enable auto-update**.
+
 ## Set up & deploy
 
 1. In your project, run `/substrait:link`. It opens the portal in your browser (you're
@@ -52,6 +59,10 @@ Config is **per project** in `./.substrait/config.json` (chmod 600, gitignored) 
 URL + the app-scoped token. You can override with `SUBSTRAIT_PORTAL_URL` / `SUBSTRAIT_TOKEN`
 in the environment.
 
+**Portal URL.** Substrait is multi-tenant, so there is no default — the URL is always
+explicit. Supply it once with `/substrait:login --portal-url <URL>`, or answer the plugin's
+**Substrait portal URL** option when you install it and every command picks it up from there.
+
 ## Maintainers
 
 **This repository is published, not edited here.** It is generated from canonical sources
@@ -65,3 +76,7 @@ in the Substrait monorepo and pushed by `scripts/publish-plugin.sh`:
 To ship a change, edit the sources in the monorepo, run `bash scripts/sync-plugin.sh`, then
 `bash scripts/publish-plugin.sh`. Direct commits here will be overwritten on the next
 publish.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

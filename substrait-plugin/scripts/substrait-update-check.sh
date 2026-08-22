@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
-# SessionStart hook for the `substrait` plugin: notify-only update check.
+# SessionStart hook for the `substrait` plugin: userConfig relay + notify-only update check.
+#
+# Two jobs, in order:
+#   1. Mirror the plugin's `portal_url` userConfig answer into a sidecar file the link/deploy
+#      scripts can read. Claude Code exports userConfig answers to HOOK processes only (as
+#      $CLAUDE_PLUGIN_OPTION_<KEY>), not to the Bash tool that runs those scripts, so this
+#      hook is the one place that sees the value. Runs before the 24h throttle below, so a
+#      changed answer takes effect on the very next session.
+#   2. The update check.
 #
 # Once per 24h (throttled, fail-silent) it asks GitHub whether a newer version of
 # the bundled substrait-app skill has been published, and if so emits a one-line
@@ -25,6 +33,22 @@ LOCAL_SKILL="$ROOT/skills/substrait-app/SKILL.md"
 LOCAL_MANIFEST="$ROOT/.claude-plugin/plugin.json"
 [ -f "$LOCAL_SKILL" ] || exit 0
 
+# ── 1. Relay the portal_url userConfig answer ───────────────────────────────────
+# Write only on change (no mtime churn), and only into the plugin's own directory — never
+# the user's ~/.substrait/config.json, which holds their personal access token. Fail-silent:
+# a read-only plugin dir must not break the session.
+SIDECAR="$ROOT/.portal-url"
+opt_portal="${CLAUDE_PLUGIN_OPTION_PORTAL_URL:-}"
+if [ -n "$opt_portal" ]; then
+  if [ "$(cat "$SIDECAR" 2>/dev/null)" != "$opt_portal" ]; then
+    printf '%s\n' "$opt_portal" > "$SIDECAR" 2>/dev/null || true
+  fi
+elif [ -f "$SIDECAR" ]; then
+  # The option was cleared — drop the stale value rather than pinning a dead portal.
+  rm -f "$SIDECAR" 2>/dev/null || true
+fi
+
+# ── 2. Update check ─────────────────────────────────────────────────────────────
 STAMP="$ROOT/.last-version-check"
 
 # Throttle: at most one check per 24h.
